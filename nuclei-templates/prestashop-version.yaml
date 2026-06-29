@@ -1,0 +1,80 @@
+id: prestashop-version
+
+info:
+  name: PrestaShop Version Fingerprint
+  author: arthursd444
+  severity: info
+  description: |
+    Fingerprints the PrestaShop core version band from theme-independent core assets.
+    Primary signal: sha256 of /js/tools.js (served verbatim under default .htaccess,
+    independent of the active theme). Secondary: presence of versioned jQuery files.
+    Hashes computed from the official git tags 1.6.1 -> 9.1.4.
+    Exact version is NOT disclosed remotely by default (no header / meta / front JS),
+    so detection pins a 1-3 release band. Verified against live PrestaShop installs.
+  reference:
+    - https://github.com/PrestaShop/PrestaShop
+  metadata:
+    verified: true
+    max-request: 5
+    vendor: prestashop
+    product: prestashop
+  tags: tech,prestashop,version
+
+http:
+  # ---- Primary: /js/tools.js content hash -> version band ----
+  - method: GET
+    path:
+      - "{{BaseURL}}/js/tools.js"
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        name: "1.6.1.x"
+        dsl:
+          - 'sha256(body) == "776ad0a2770ad7da94355d38665b178d06edcb8b470ca614b3f4e3106faeb051"'
+      - type: dsl
+        name: "1.7.0.x"
+        dsl:
+          - 'sha256(body) == "5b567f0d7dcf7ab95768fe22c9451455dd63cdd8420d43b6221b0f9d940bfa31"'
+      - type: dsl
+        name: "1.7.6.x"
+        dsl:
+          - 'sha256(body) == "e8bdc3096e8a8a25c82ff6e61f79083189e3cfcd0e03a13418f0cd364cb6dce6"'
+      - type: dsl
+        name: "1.7.7.x-1.7.8.5 / 8.0.0-8.1.0"
+        dsl:
+          - 'sha256(body) == "3c37c6241f808f7e7b60004d4c0160e8c7b7b971957409832d64c9ebd64886ef"'
+      - type: dsl
+        name: "1.7.8.11"
+        dsl:
+          - 'sha256(body) == "a712cde1f5eda580a8d5b7d4dcb047f1158bd86ca394836765c5262599d4512c"'
+      - type: dsl
+        name: "8.1.7-8.2.7"
+        dsl:
+          - 'sha256(body) == "4c85fbb2829decbd3761b8fe3e402e5501cfa9bcef330d13611dac65e19fad7f"'
+      - type: dsl
+        name: "9.0.0-9.0.3"
+        dsl:
+          - 'sha256(body) == "eef1daf35a445c6e95ac17ace76d6ead296ea12e3835c32225d06a787e53ccba"'
+      - type: dsl
+        name: "9.1.0-9.1.4"
+        dsl:
+          - 'sha256(body) == "cfc4354645bcbdb7c14738b8d0e7463a36d6143283fbdf19a8092004357f32b7"'
+
+  # ---- Secondary: versioned jQuery presence -> major range ----
+  # Run only as a fallback when tools.js is blocked. A real hit must return the
+  # full file (size guard) to defeat soft-404 pages that return 200 + tiny body.
+  - method: GET
+    path:
+      - "{{BaseURL}}/js/jquery/jquery-3.7.1.min.js"
+      - "{{BaseURL}}/js/jquery/jquery-1.11.0.min.js"
+    stop-at-first-match: false
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        name: "9.x (jquery-3.7.1 present)"
+        dsl:
+          - 'status_code == 200 && len(body) > 80000 && contains(body, "jQuery v3.7.1")'
+      - type: dsl
+        name: "<=8.x (jquery-1.11.0 present)"
+        dsl:
+          - 'status_code == 200 && len(body) > 80000 && contains(body, "jQuery v1.11.0")'

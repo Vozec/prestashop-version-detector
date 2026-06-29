@@ -1,0 +1,13 @@
+# compiled binary
+/psdetect
+
+# scratch / reports
+*.json.out
+out.json
+/tmp/
+
+# editor / OS
+.DS_Store
+*.swp
+.idea/
+.vscode/
